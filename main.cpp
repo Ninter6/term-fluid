@@ -5,8 +5,6 @@
 #include <unistd.h>
 #include <random>
 
-#include "raylib.h"
-
 #include "mathpls.h"
 
 using namespace mathpls;
@@ -278,32 +276,6 @@ void step(float dt) {
     solve_barrier();
 }
 
-Camera2D camera{};
-
-void init_gui() {
-    InitWindow(768, 192, "fluid test");
-    SetTargetFPS(240);
-
-    SetConfigFlags(FLAG_MSAA_4X_HINT);
-
-    camera.zoom = 9.6f;
-}
-
-void show_gui() {
-    BeginDrawing();
-    ClearBackground(RAYWHITE);
-    DrawFPS(0, 0);
-    BeginMode2D(camera);
-    for (auto& i : p) {
-        DrawCircleV({i.pos.x, i.pos.y}, .3f, GRAY);
-    }
-    for (auto& b : bar) {
-        DrawRectangleV({b.x-.5f, b.y-.5f}, {1, 1}, BLACK);
-    }
-    EndMode2D();
-    EndDrawing();
-}
-
 void idem() {
     fill_gird();
     gen_img();
@@ -314,8 +286,6 @@ void idem() {
 }
 
 int main() {
-//    init_gui();
-
     init();
     idem();
 
@@ -324,7 +294,6 @@ int main() {
         gen_img();
         clr_scr();
         print();
-//        show_gui();
     }
 
     return 0;
