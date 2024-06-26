@@ -14,7 +14,7 @@
 # 编译
 可能需要c++17编译器
 ```
-g++ main.cpp -std=c++20 -O3 -march=native -o fluid
+g++ main.cpp -std=c++17 -O3 -march=native -o fluid
 ```
 
 # 例子
