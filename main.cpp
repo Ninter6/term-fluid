@@ -2,12 +2,14 @@
 #include <vector>
 #include <numeric>
 #include <thread>
-#include <unistd.h>
 #include <random>
+#include <algorithm>
 
 #include "mathpls.h"
-
 using namespace mathpls;
+
+#define PARTICLE_TABLE  "1234567890-=+*@█"
+#define BARRIER_TABLE   "#"
 
 constexpr size_t wth = 80, hgt = 20;
 constexpr float s = 2.f; // Smooth radius
@@ -34,30 +36,30 @@ float E = 1.f; // The surface tension coefficient
 
 constexpr float R = 1.f, D = .1f; // edge constant
 
-vec2 g = {0, 1.f};
+vec2 g = {0, 1.f}; // The gravity acceleration
 
 std::vector<int>& get_near_particles(int n);
 
 // kernel
 float smooth(float r) {
     if (r >= s) return 0;
-    constexpr float v = 10.f/(M_PI*s*s*s*s*s);
+    constexpr float v = 10.f/(pi()*s*s*s*s*s);
     return (s-r)*(s-r)*(s-r)*v;
 }
 float grad_smooth(float r) {
     if (r >= s) return 0;
-    constexpr float v = 6.f/(s*s*s*s*M_PI);
+    constexpr float v = 6.f/(s*s*s*s*pi());
     return -(s-r)*(s-r)*v;
 }
 float grad2_smooth(float r) {
     if (r >= s) return 0;
-    constexpr float v = 3.f/(s*s*s*M_PI);
+    constexpr float v = 3.f/(s*s*s*pi());
     return (s-r)*v;
 }
 
 float viscosity_kernel(float r) {
     if (r >= s) return 0;
-    constexpr float v = 1.f/(M_PI_4*s*s*s*s*s*s*s*s);
+    constexpr float v = 4.f/(pi()*s*s*s*s*s*s*s*s);
     float a = s*s - r*r;
     return a*a*a*v;
 }
@@ -193,7 +195,7 @@ void init() {
     for (int i = 0; i < hgt-1; i++)
         img[wth*i+i+wth] = '\n';
 
-    std::string buf, tb = "1234567890-=+*@█", bt = "#";
+    std::string buf, tb = PARTICLE_TABLE, bt = BARRIER_TABLE;
     for (int i = 0; std::getline(std::cin, buf) && i <= hgt; i++)
         for (int j = 0; j < min(wth+1, buf.size()); j++)
             if (tb.find(buf[j]) < tb.size()) {
@@ -240,11 +242,9 @@ void clr_gird() {
 }
 
 uint8_t rd_smp(int x, int y) {
-    if (!gird[x][y].empty()) return true;
-    auto f = std::lower_bound(bar.begin(), bar.end(), ivec2{x, y}, [](auto&& a, auto&& b){
+    return !gird[x][y].empty() || std::binary_search(bar.begin(), bar.end(), ivec2{x, y}, [](auto&& a, auto&& b){
         return a.y < b.y || (a.y == b.y && a.x < b.x);
     });
-    return f != bar.end() && f->x == x && f->y == y;
 }
 
 void gen_img() {
@@ -259,12 +259,12 @@ void gen_img() {
             img[wth*j+j+i] = lut[c];
         }
 }
-
+ 
 void print() {
+    gen_img();
+    std::puts("\033[H");
     std::puts(img);
-}
-void clr_scr() {
-    std::puts("\033[2J\033[H");
+    std::fflush(stdout);
 }
 
 void step(float dt) {
@@ -278,21 +278,20 @@ void step(float dt) {
 
 void idem() {
     fill_gird();
-    gen_img();
-    clr_scr();
     print();
     puts("Just a second...");
-    sleep(1);
+    std::this_thread::sleep_for(std::chrono::seconds{1});
+    puts("\033[2J");
 }
 
 int main() {
     init();
     idem();
 
-    while (1) {
-        step(1.f/256.f);
-        gen_img();
-        clr_scr();
+    while (true) {
+        constexpr int fps = 32, step_per_frame = 8;
+        for (int i = 0; i < step_per_frame; i++)
+            step(1.f/fps/step_per_frame);
         print();
     }
 
