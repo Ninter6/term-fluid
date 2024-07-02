@@ -8,11 +8,12 @@
 #include "mathpls.h"
 using namespace mathpls;
 
-#define PARTICLE_TABLE  "1234567890-=+*@█"
+#define PARTICLE_TABLE  "1234567890-=+*@█.:x"
 #define BARRIER_TABLE   "#"
 
 constexpr size_t wth = 80, hgt = 20;
 constexpr float s = 2.f; // Smooth radius
+constexpr int char_part = 2; // Particles per character
 
 char img[wth * hgt + hgt]{};
 
@@ -30,7 +31,7 @@ std::vector<int> near_gird[wth+1][hgt+1]{};
 std::vector<ivec2> bar; // barriers
 
 float target_density = .8f;
-float K = 100.f; // The pressure multiplier
+float K = 300.f; // The pressure multiplier
 float V = 2.f; // The viscosity strength
 float E = 1.f; // The surface tension coefficient
 
@@ -123,7 +124,7 @@ void calcu_density() {
 
 void calcu_force() {
     for (int i = 0; i < p.size(); i++) {
-        auto force = pressure_force(i) + viscosity_force(i)/* + surface_tension(i)*/;
+        auto force = pressure_force(i) + viscosity_force(i) + surface_tension(i);
         p[i].acc = force / p[i].density + g;
     }
 }
@@ -199,7 +200,7 @@ void init() {
     for (int i = 0; std::getline(std::cin, buf) && i <= hgt; i++)
         for (int j = 0; j < min(wth+1, buf.size()); j++)
             if (tb.find(buf[j]) < tb.size()) {
-                for (int n = 0; n < 5; n++)
+                for (int n = 0; n < char_part; n++)
                     p.emplace_back(vec2(j, i) + mathpls::random::rand_vec2() * 0.1f);
             } else if (bt.find(buf[j]) < bt.size()) {
                 bar.emplace_back(j, i);
@@ -264,7 +265,6 @@ void print() {
     gen_img();
     std::puts("\033[H");
     std::puts(img);
-    std::fflush(stdout);
 }
 
 void step(float dt) {
